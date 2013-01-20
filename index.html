@@ -5,22 +5,97 @@
 <title>background experiments</title>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script type="text/javascript">
-var x_space_per_particle = 20;
-var z_space_per_particle = x_space_per_particle;
 
-$(document).ready(function() {
-	function set_up_particles () {
-		var width = $(window).width();
-		var height = $(window).height();
-		
-		// how many particles do we want, if they were, say, in a grid?
-		
+/* HERE IS MY FIRST JQUERY PLUGIN!! */
+(function( $ ){
+  $.fn.starfield = function( options ) {
+	  // Create some defaults, extending them with any options that were provided
+    var settings = $.extend( {
+      'x_px_per_particle' 	: 40,
+	  'y_px_per_particle' 	: 40,
+	  'x_factor'			: 50,
+	  'y_factor'			: 20,
+	  'z_factor'			: 1,
+	}, options);
+    // how many stars should I add?
+	
+	var x_stars = this.width() / settings['x_px_per_particle'];
+	var y_stars = this.height() / settings['y_px_per_particle'];
+	var total_stars = x_stars * y_stars;
+	var my_width = this.width();
+	var my_height = this.height();
+	var my_mouse_x;
+	var my_mouse_y;
+	
+	
+	for (var i=0; i<total_stars; i++) {
+		// where do I go?
+		var myx = Math.random() * this.width();
+		var myy = Math.random() * this.height();
+		var myz = Math.random();
+		var myOpacity = myz * settings['z_factor'];
+		this.append('<div class="bms_starfield_star_wrapper" style="position: absolute">\
+		                  <div class="bms_starfield_star" style=" \
+						  									position: relative; \
+															left:'+myx+'px; \
+															top:'+myy+'px; \
+															opacity: '+myOpacity+'\
+															" \
+															data-x="'+myx+'" \
+															data-y="'+myy+'" \
+															data-z="'+myz+'" \
+															>.</div></div>');
 	}
 	
+	$('html').mousemove(function(e) {
+		my_page_center_x = my_width/2;
+		// where is the mouse compared to center?
+		my_mouse_x = e.pageX - my_page_center_x;
+		// how is that expressed on a scale of -1 to 1?
+		my_mouse_x = my_mouse_x / my_page_center_x;
+		
+		my_page_center_y = my_height/2;
+		// where is the mouse compared to center?
+		my_mouse_y = e.pageY - my_page_center_y;
+		// how is that expressed on a scale of -1 to 1?
+		my_mouse_y = my_mouse_y / my_page_center_y;
+		
+		
+		$('.bms_starfield_star').each(function() {
+			var new_left = $(this).data('x') + ($(this).data('z') * my_mouse_x) * settings['x_factor'];
+			var new_top = $(this).data('y') + ($(this).data('z') * my_mouse_y) * settings['y_factor'];
+			$(this).css('left', new_left);
+			$(this).css('top', new_top);
+			//console.log(e.pageX +', '+ e.pageY);
+		});
+	});
+  };
+})( jQuery );
+
+
+
+
+$(document).ready(function() {
+	$('#background').starfield();
 });
 </script>
+<style type="text/css">
+html, body {
+	height: 100%;
+	margin: 0;
+	color: white;
+	background: black;
+}
+#background {
+	background: #002;
+	min-height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+</style>
 </head>
 
 <body>
+<div id="background" > </div>
 </body>
 </html>
