@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>background experiments</title>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript">
+
+/* HERE IS MY FIRST JQUERY PLUGIN!! */
+(function( $ ){
+  $.fn.starfield = function( options ) {
+	  // Create some defaults, extending them with any options that were provided
+    var settings = $.extend( {
+      'x_px_per_particle' 	: 60,
+	  'y_px_per_particle' 	: 60,
+	  'x_factor'			: 500,
+	  'y_factor'			: 200,
+	  'z_factor'			: 1,
+	  'layers'				: 10
+	}, options);
+    // how many stars should I add?
+	
+	var x_stars = this.width() / settings['x_px_per_particle'];
+	var y_stars = this.height() / settings['y_px_per_particle'];
+	var total_stars = x_stars * y_stars;
+	var my_width = this.width();
+	var my_height = this.height();
+	var my_page_center_x
+	var my_mouse_x
+	var my_mouse_scale_x;
+	var my_page_center_y
+	var my_mouse_y
+	var my_mouse_scale_y;
+	var timer;
+	var last_mouse_x;
+	var last_mouse_y;
+	var move_tolerance = 50;
+	var moving = "stopped";
+	var my_page_center_x = my_width/2;
+	var my_page_center_y = my_height/2;
+	var stars_per_layer = total_stars/settings['layers'];
+
+	for (var li=1; li<=settings['layers']; li++) {
+		var myz = li * 1/settings['layers'];
+		var myOpacity = (myz * (settings['z_factor']));
+		this.append('<div class="bms_starfield_layer layer_'+li+'" style="\
+position: absolute; \
+opacity: '+myOpacity+'; \
+"\
+data-x="0" \
+data-y="0" \
+data-z="'+myz+'" \
+"> </div>');
+		
+		for (var i=0; i<stars_per_layer; i++) {
+			// where do I go?
+			// add margins for x and y factor!
+			var myx = ( Math.random() * (this.width() + (2 * settings['x_factor'])) ) - settings['x_factor'];
+			var myy = ( Math.random() * (this.height() + (2 * settings['y_factor'])) ) - settings['y_factor'];
+			var mysize = (20 * Math.random()) + 20 ;
+			jQuery('.bms_starfield_layer.layer_'+li).append('<div class="bms_starfield_star_wrapper" style="position: absolute">\
+<div class="bms_starfield_star" style=" \
+position: relative; \
+left:'+myx+'px; \
+top:'+myy+'px;" \
+> \
+<img src="star.png" width="'+mysize+'" height="'+mysize+'"/> \
+</div></div>');
+		}
+	}
+	
+	
+	// track the mouse position 
+	$('html').mousemove(function(e) {
+		// where is the mouse compared to center?
+		my_mouse_x = e.pageX - my_page_center_x;
+		// how is that expressed on a scale of -1 to 1?
+		my_mouse_scale_x = my_mouse_x / my_page_center_x;
+		
+		// where is the mouse compared to center?
+		my_mouse_y = e.pageY - my_page_center_y;
+		// how is that expressed on a scale of -1 to 1?
+		my_mouse_scale_y = my_mouse_y / my_page_center_y;
+	});
+	
+	// every now and again, check if the mouse has moved much;
+	window.setInterval(check_for_mouse_movement, 100);
+	function check_for_mouse_movement() { 
+		if ( (Math.abs(last_mouse_x - my_mouse_x) > move_tolerance) || (Math.abs(last_mouse_y - my_mouse_y) > move_tolerance) )
+		{
+			moving = "moving"
+		} else {
+			// we're not moving.
+			switch (moving) {
+				case "moving" :
+					moving = "slowing";
+					break;
+				case "slowing" :
+					moving = "stopped-execute";
+					break;
+				case "stopped-execute" :
+					moving = "stopped";
+					break;
+				case "stopped" :
+					// silence is golden.
+					break;
+			}
+		}
+		if (moving == "stopped-execute") {
+			set_stars();
+		}
+		console.log(moving);
+		last_mouse_x = my_mouse_x;
+		last_mouse_y = my_mouse_y;
+	}
+	
+	
+	// function to set the star positions
+	function set_stars() {	
+		$('.bms_starfield_layer').each(function() {
+			var new_left = $(this).data('x') + ($(this).data('z') * my_mouse_scale_x) * settings['x_factor'] + "px";
+			var new_top = $(this).data('y') + ($(this).data('z') * my_mouse_scale_y) * settings['y_factor'] + "px";
+			$(this).animate({'left': new_left, 'top': new_top}, 2000, 'swing');
+			$(this).animate({});
+		});
+	}
+  };
+})( jQuery );
+
+
+
+
+$(document).ready(function() {
+	$('#background').starfield();
+});
+</script>
+<style type="text/css">
+html, body {
+	height: 100%;
+	margin: 0;
+	color: white;
+	background: black;
+}
+#background {
+	background: #002;
+	min-height: 300px;
+	overflow: hidden;
+	position: relative;
+}
+</style>
+</head>
+
+<body>
+<div id="background" > </div>
+</body>
+</html>
