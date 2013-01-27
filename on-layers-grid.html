@@ -11,20 +11,23 @@
   $.fn.starfield = function( options ) {
 	  // Create some defaults, extending them with any options that were provided
     var settings = $.extend( {
-      'x_px_per_particle' 	: 60,
-	  'y_px_per_particle' 	: 60,
-	  'x_factor'			: 500,
-	  'y_factor'			: 200,
+      'x_px_per_particle' 	: 80,
+	  'y_px_per_particle' 	: 80,
+	  'x_factor'			: 300,
+	  'y_factor'			: 300,
 	  'z_factor'			: 1,
-	  'layers'				: 10
+	  'layers'				: 4,
+	  'scale_factor'		: .02
 	}, options);
     // how many stars should I add?
 	
-	var x_stars = this.width() / settings['x_px_per_particle'];
-	var y_stars = this.height() / settings['y_px_per_particle'];
-	var total_stars = x_stars * y_stars;
-	var my_width = this.width();
-	var my_height = this.height();
+	var width = this.width();
+	var height = this.height();
+	var rows = Math.floor(width / settings['x_px_per_particle']);
+	var cols = Math.floor(height / settings['y_px_per_particle']);
+	var total_stars = rows * cols;
+	var my_width = width;
+	var my_height = height;
 	var my_page_center_x
 	var my_mouse_x
 	var my_mouse_scale_x;
@@ -39,8 +42,17 @@
 	var my_page_center_x = my_width/2;
 	var my_page_center_y = my_height/2;
 	var stars_per_layer = total_stars/settings['layers'];
+	
+	console.log(rows);
+	console.log(cols);
+	
 
 	for (var li=1; li<=settings['layers']; li++) {
+		var layer_scale = 1 +((li -1) * settings['scale_factor']) ;
+		console.log("==============================================");
+		console.log("layer "+li);
+		console.log("layer_scale " + layer_scale);
+		
 		var myz = li * 1/settings['layers'];
 		var myOpacity = (myz * (settings['z_factor']));
 		this.append('<div class="bms_starfield_layer layer_'+li+'" style="\
@@ -52,13 +64,20 @@ data-y="0" \
 data-z="'+myz+'" \
 "> </div>');
 		
-		for (var i=0; i<stars_per_layer; i++) {
-			// where do I go?
-			// add margins for x and y factor!
-			var myx = ( Math.random() * (this.width() + (2 * settings['x_factor'])) ) - settings['x_factor'];
-			var myy = ( Math.random() * (this.height() + (2 * settings['y_factor'])) ) - settings['y_factor'];
-			var mysize = (20 * Math.random()) + 20 ;
-			jQuery('.bms_starfield_layer.layer_'+li).append('<div class="bms_starfield_star_wrapper" style="position: absolute">\
+		for (var row=1; row<=rows; row++) {
+			var myx_adjust = ((width * layer_scale) - width) /2;
+			var myx_adjust = myx_adjust + (settings['y_px_per_particle'] * layer_scale) / 2;
+			var myx = row * (settings['y_px_per_particle'] * layer_scale);
+			console.log("myx is "+myx+"; row is "+row+" =======");
+			
+			for (col=1; col<=cols; col++) {
+				var myy_adjust = ((height * layer_scale) - height) /2;
+				var myy_adjust = myy_adjust + (settings['x_px_per_particle'] * layer_scale) / 2
+				var myy = col * (settings['x_px_per_particle'] * layer_scale) - myy_adjust;
+				console.log("myy is "+myy+"; col is "+col);
+				
+				var mysize = 20;
+				jQuery('.bms_starfield_layer.layer_'+li).append('<div class="bms_starfield_star_wrapper" style="position: absolute">\
 <div class="bms_starfield_star" style=" \
 position: relative; \
 left:'+myx+'px; \
@@ -66,21 +85,27 @@ top:'+myy+'px;" \
 > \
 <img src="star.png" width="'+mysize+'" height="'+mysize+'"/> \
 </div></div>');
+			}
 		}
 	}
-	
 	
 	// track the mouse position 
 	$('html').mousemove(function(e) {
 		// where is the mouse compared to center?
 		my_mouse_x = e.pageX - my_page_center_x;
 		// how is that expressed on a scale of -1 to 1?
-		my_mouse_scale_x = my_mouse_x / my_page_center_x;
+		my_mouse_scale_x = my_mouse_x / width;
+		my_mouse_scale_x = my_mouse_scale_x * 2
 		
 		// where is the mouse compared to center?
 		my_mouse_y = e.pageY - my_page_center_y;
 		// how is that expressed on a scale of -1 to 1?
-		my_mouse_scale_y = my_mouse_y / my_page_center_y;
+		my_mouse_scale_y = my_mouse_y / height;
+		my_mouse_scale_y = my_mouse_scale_y * 2
+		
+		console.log("my_mouse: "+my_mouse_x +", "+my_mouse_y);
+		console.log("my_mouse_scale: "+my_mouse_scale_x+", "+my_mouse_scale_y);
+		
 	});
 	
 	// every now and again, check if the mouse has moved much;
@@ -109,26 +134,22 @@ top:'+myy+'px;" \
 		if (moving == "stopped-execute") {
 			set_stars();
 		}
-		console.log(moving);
+		//console.log(moving);
 		last_mouse_x = my_mouse_x;
 		last_mouse_y = my_mouse_y;
 	}
 	
-	
 	// function to set the star positions
 	function set_stars() {	
 		$('.bms_starfield_layer').each(function() {
-			var new_left = $(this).data('x') + ($(this).data('z') * my_mouse_scale_x) * settings['x_factor'] + "px";
-			var new_top = $(this).data('y') + ($(this).data('z') * my_mouse_scale_y) * settings['y_factor'] + "px";
+			var new_left = ($(this).data('x') + ($(this).data('z') * my_mouse_scale_x * settings['x_factor'])) + "px";
+			var new_top  = ($(this).data('y') + ($(this).data('z') * my_mouse_scale_y * settings['y_factor'])) + "px";
 			$(this).animate({'left': new_left, 'top': new_top}, 2000, 'swing');
 			$(this).animate({});
 		});
 	}
   };
 })( jQuery );
-
-
-
 
 $(document).ready(function() {
 	$('#background').starfield();
@@ -143,7 +164,7 @@ html, body {
 }
 #background {
 	background: #002;
-	min-height: 300px;
+	min-height: 100%;
 	overflow: hidden;
 	position: relative;
 }
