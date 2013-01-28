@@ -21,8 +21,8 @@
 	}, options);
     // how many stars should I add?
 	
-	var width = this.width();
-	var height = this.height();
+	var width = jQuery(window).width();
+	var height = jQuery(window).height();
 	var rows = Math.floor(width / settings['x_px_per_particle']);
 	var cols = Math.floor(height / settings['y_px_per_particle']);
 	var total_stars = rows * cols;
@@ -42,6 +42,9 @@
 	var my_page_center_x = my_width/2;
 	var my_page_center_y = my_height/2;
 	var stars_per_layer = total_stars/settings['layers'];
+	
+	this.css('width', width + 'px');
+	this.css('height', height + 'px');
 	
 	// console.log(rows);
 	// console.log(cols);
@@ -110,6 +113,8 @@ top:'+myy+'px;" \
 		// console.log("my_mouse: "+my_mouse_x +", "+my_mouse_y);
 		// console.log("my_mouse_scale: "+my_mouse_scale_x+", "+my_mouse_scale_y);
 		
+		set_stars();
+		
 	});
 	
 	// every now and again, check if the mouse has moved much;
@@ -136,11 +141,13 @@ top:'+myy+'px;" \
 			}
 		}
 		if (moving == "stopped-execute") {
-			set_stars();
+			//set_stars();
 		}
 		//console.log(moving);
 		last_mouse_x = my_mouse_x;
 		last_mouse_y = my_mouse_y;
+		
+		
 	}
 	
 	// function to set the star positions
